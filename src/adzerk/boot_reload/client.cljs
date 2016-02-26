@@ -36,6 +36,10 @@
   (when (rl/has-dom?)
     (d/display state opts)))
 
+(defn protocol-from-opts [{:keys [asset-host]}]
+  (when (and asset-host (>= (.indexOf asset-host ":") 0))
+    (str (first (.split asset-host ":")) ":")))
+
 (defn connect [url & [opts]]
   (when-not (alive?)
     (let [conn (ws/websocket-connection)]
@@ -45,7 +49,8 @@
       (event/listen conn :opened
         (fn [evt]
           (send-message! {:type :set-protocol
-                          :protocol (.. js/window -location -protocol)})
+                          :protocol (or (protocol-from-opts opts)
+                                        (.. js/window -location -protocol))})
           (.info js/console "Reload websocket connected.")))
 
       (event/listen conn :message
